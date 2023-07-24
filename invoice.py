@@ -16,19 +16,25 @@ from tkinter import messagebox
 from tkinter import scrolledtext
 from tkinter import ttk
 from datetime import date
-
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import os
 
 def login():
     if username_entry.get() == 'prince':
         if password_entry.get() == '1001':
             login_window.withdraw()
             window.deiconify()
+            username_entry.delete(0, tk.END)
+            password_entry.delete(0, tk.END)
         else:
             messagebox.showerror("Login Error", "Invalid password. Please try again.")
     elif username_entry.get() == 'admin':
         if password_entry.get() == '1002':
             login_window.withdraw()
             window.deiconify()
+            username_entry.delete(0, tk.END)
+            password_entry.delete(0, tk.END)
         else:
             messagebox.showerror("Login Error", "Invalid password. Please try again.")
     else:
@@ -55,6 +61,10 @@ password_entry.pack(pady=5)
 
 login_button = tk.Button(login_window, text="Login", command=login, font=('arial', 12, 'bold'), bg='#27AE60', fg='white', relief=tk.RIDGE)
 login_button.pack(pady=10)
+def close():
+    window.destroy()
+close_button = tk.Button(login_window, text="Close", command=close, font=('arial', 12, 'bold'), bg='#27AE60', fg='white', relief=tk.RIDGE)
+close_button.pack(pady=15)
 
 window = tk.Tk()
 window.withdraw()
@@ -271,7 +281,7 @@ bill_number = 1
 
 
 mainbill_frame = tk.LabelFrame(window, text=' Item detail ', font=('times new roman', 12, 'bold'), bg='black', fg='white', bd=8, relief=tk.RIDGE)
-mainbill_frame.pack(side='left', padx=10, pady=10, ipadx=20, ipady=20, anchor="nw")
+mainbill_frame.pack(side='left', padx=10, pady=10, ipadx=20, ipady=30, anchor="nw")
 multiline_bill_text = scrolledtext.ScrolledText(mainbill_frame, width=50, height=30, wrap=tk.WORD, bd=8, relief=tk.RIDGE)
 multiline_bill_text.grid(row=2, column=0)
 
@@ -279,5 +289,83 @@ mainbill_button = tk.Button(mainbill_frame, text='Generate Bill', command=mainbi
 mainbill_button.grid(row=4, column=0, padx=0, pady=2, ipadx=5, ipady=5)
 clearbill_button = tk.Button(mainbill_frame, text='Clear Bill', command=clearbill, font=('arial', 12, 'bold'), bg='#27AE60', fg='white', relief=tk.RIDGE)
 clearbill_button.grid(row=5, column=0, padx=0, pady=2, ipadx=5, ipady=5)
+
+def generate_pdf():
+    customer_name = name_entry.get()
+    phone_number = phone_entry.get()
+    bill_number = billno_entry.get()
+
+    if not customer_name or not phone_number or not bill_number:
+        messagebox.showerror("Error", "Please enter all customer details.")
+        return
+    bill_date = date.today().strftime("%d/%m/%Y")
+    items_and_quantities = multiline_text.get("1.0", tk.END).strip().split('\n')
+    total_amount = 0
+    cgst = 0
+    sgst = 0
+    save_directory = r"F:\qr"
+    if not os.path.exists(save_directory):
+        os.makedirs(save_directory)
+    file_name = os.path.join(save_directory, f"Bill_{bill_number}.pdf")
+    c = canvas.Canvas(file_name, pagesize=letter)
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(250, 800, "TAX Invoice")
+
+    c.setFont("Helvetica", 12)
+    c.drawString(50, 760, f"Bill No. : {bill_number}")
+    c.drawString(450, 760, f"Date: {bill_date}")
+    c.drawString(50, 730, f"Name: {customer_name}    Phone: {phone_number}")
+
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, 700, "--------------------------------------------------")
+
+    y_position = 680
+    for item_quantity in items_and_quantities:
+        item, quantity = item_quantity.split(" - Quantity: ")
+        item_parts = item.split("Price")
+        item_name = item_parts[0].strip()  # Extract the item name
+        item_price = item_parts[1].replace("-", "").strip()  # Extract the item price (remove hyphen and spaces)
+        total_item_price = int(item_price) * int(quantity)
+        total_amount += total_item_price
+        c.drawString(50, y_position, f"{item_name} x{quantity} = {total_item_price}")
+        y_position -= 20
+    cgst_amount = total_amount * 0.08
+    sgst_amount = total_amount * 0.08
+    cgst += cgst_amount
+    sgst += sgst_amount
+
+    total_tax = cgst + sgst
+    total_amount_with_tax = total_amount + total_tax
+
+    c.drawString(50, y_position, "--------------------------------------------------")
+    y_position -= 20
+    c.drawString(50, y_position, f"Total Amount (Before Tax): {total_amount}")
+    y_position -= 20
+    c.drawString(50, y_position, f"CGST (8%): {cgst}")
+    y_position -= 20
+    c.drawString(50, y_position, f"SGST (8%): {sgst}")
+    y_position -= 20
+    c.drawString(50, y_position, f"Total Tax: {total_tax}")
+    y_position -= 20
+    c.drawString(50, y_position, "--------------------------------------------------")
+    y_position -= 20
+    c.drawString(50, y_position, f"Total Amount (After Tax): {total_amount_with_tax}")
+    y_position -= 20
+    c.drawString(50, y_position, "--------------------------------------------------")
+    y_position -= 20
+    c.drawString(50, y_position, "Thank you for shopping with us!")
+    c.save()
+    messagebox.showinfo("Success", f"Bill saved as {file_name}")
+    clearbill()
+
+
+pdf_button = tk.Button(mainbill_frame, text='Download PDF', command=generate_pdf, font=('arial', 12, 'bold'), bg='#27AE60', fg='white', relief=tk.RIDGE)
+pdf_button.grid(row=6, column=0, padx=0, pady=2, ipadx=5, ipady=5)
+def exits():
+    if messagebox.askokcancel("Exit", "Are you sure you want to exit?"):
+        login_window.deiconify()
+        window.withdraw()
+exit_button = tk.Button(customer_frame, text='EXIT', command=exits, font=('arial', 12, 'bold'), bg='#27AE60', fg='white', relief=tk.RIDGE)
+exit_button.grid(row=7, column=3, padx=0, pady=2, ipadx=5, ipady=5)
 
 window.mainloop()
