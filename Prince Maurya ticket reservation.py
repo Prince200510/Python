@@ -9,7 +9,7 @@
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 import random
-
+import qrcode
 
 class Train:
     def __init__(self):
@@ -30,7 +30,7 @@ class Train:
         if choice in option:
             option[choice]()
         else:
-            print("! Invalid option !")
+            print("! Invalid press !")
 
     def admin(self):
         ID = int(input("Login ID: "))
@@ -86,7 +86,7 @@ class Train:
                     break
                 option1[choice1]()
             else:
-                print("Invalid choice!")
+                print("Invalid press!")
 
     def newticketbook(self):
         p=0
@@ -309,14 +309,35 @@ class Train:
             print("Passenger not found.")
 
     def goback(self):
-        logout = input("Confirm logout ? if yes then click y :")
+        logout = input("Confirm logout ? if yes then click y or to continue press any key :")
 
-        if logout=="y" or "Y":
+        if logout.lower()=="y":
             self.mainpage()
+        else:
+            self.ticketpage()
 
     def passengerlogin(self):
-        print("welcome test")
 
+        print("|==============================================================|")
+        print("|                           WELCOME                            |")
+        print("|==============================================================|")
+
+        ticketview = input("search a my ticket ? if yes then click on y :")
+
+        if ticketview.lower()== "y":
+            self.showticket()
+        else:
+            print("Invaild key press ! ")
+
+        back = input("press b key to go back or press c to search ticket :")
+
+        if back.lower() =="b":
+            self.mainpage()
+        elif back.lower()=="c":
+            self.ticketpage()
+        else:
+            print("Invaild press !")
+            self.passengerlogin()
 
 object = Train()
 object.mainpage()
