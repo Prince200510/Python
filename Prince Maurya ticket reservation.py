@@ -9,7 +9,6 @@
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 import random
-import qrcode
 
 class Train:
     def __init__(self):
